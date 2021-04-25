@@ -31,6 +31,8 @@ if __name__ == '__main__':
                       required=True, help='IPTA *.txt file with metadata (dates)')
     parser.add_argument('-e','--in_EPSG', type=int, 
                       required=True, help='EPSG integer of long lat coordinates in table')
+    parser.add_argument('-z','--zero_shift', type=str, 
+                      required=False, help='shift PS time series to first entries, YES, default NO')
     parser.add_argument('-o','--out_shp', type=pathlib.Path,
                       required=True, help='where to save the *.shp file generated, if ext not specified a folder is created',default='-')
     args = parser.parse_args()
@@ -41,6 +43,7 @@ if __name__ == '__main__':
     IPTA_table=args.in_table    
     IPTA_meta=args.in_meta
     IPTA_EPSG = args.in_EPSG
+    shift_ts = args.zero_shift
     SHP_out=args.out_shp
 
     #iitialize variables for metafile
@@ -102,6 +105,17 @@ if __name__ == '__main__':
 
     #IPTA_EPSG = string()
     #an other way
+    if shift_ts == 'YES':
+        for i,ele in enumerate(IPTA_df.columns):
+            #print(ele)
+            #print(bool(re.search(r"D\d{8}", ele)) )
+            #print(i)
+            if bool(re.search(r"D\d{8}", ele)):
+                break
+        displ_0 = IPTA_df.iloc[:,i]
+        IPTA_df.loc[:,IPTA_df.columns.str.contains(r'D\d{8}')]=IPTA_df.loc[:,IPTA_df.columns.str.contains(r'D\d{8}')].sub(displ_0, axis= 0)
+
+
     gdf = gpd.GeoDataFrame(IPTA_df.copy())
     gdf.set_geometry(
         gpd.points_from_xy(gdf['lon_deg'], gdf['lat_deg']),
